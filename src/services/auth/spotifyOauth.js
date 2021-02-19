@@ -1,7 +1,7 @@
 const passport = require("passport");
 const SpotifyStrategy = require("passport-spotify").Strategy;
 const UserModel = require("../users/schema");
-const { authenticate } = require("./");
+const { authenticate } = require(".");
 
 passport.use(
   "spotify",

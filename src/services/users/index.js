@@ -1,6 +1,5 @@
 const express = require("express");
 const passport = require("passport");
-
 const UserModel = require("./schema");
 const { authenticate, refresh } = require("../auth");
 const { authorize } = require("../auth/middlewares");
@@ -113,6 +112,56 @@ usersRouter.get(
 usersRouter.get(
   "/spotifyRedirect",
   passport.authenticate("spotify"),
+  async (req, res, next) => {
+    try {
+      res.cookie("accessToken", req.user.tokens.accessToken, {
+        httpOnly: true,
+      });
+      res.cookie("refreshToken", req.user.tokens.refreshToken, {
+        httpOnly: true,
+        path: "/users/refreshToken",
+      });
+
+      res.status(200).redirect("http://localhost:3000/");
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+usersRouter.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+usersRouter.get(
+  "/googleRedirect",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  async (req, res, next) => {
+    try {
+      res.cookie("accessToken", req.user.tokens.accessToken, {
+        httpOnly: true,
+      });
+      res.cookie("refreshToken", req.user.tokens.refreshToken, {
+        httpOnly: true,
+        path: "/users/refreshToken",
+      });
+
+      res.status(200).redirect("http://localhost:3000/");
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+usersRouter.get(
+  "/facebookLogin",
+  passport.authenticate("facebook", { scope: ["public_profile", "email"] })
+);
+
+usersRouter.get(
+  "/facebookRedirect",
+  passport.authenticate("facebook", { failureRedirect: "/login" }),
   async (req, res, next) => {
     try {
       res.cookie("accessToken", req.user.tokens.accessToken, {
