@@ -9,9 +9,35 @@ passport.use(
     {
       clientID: process.env.SPOTIFY_CLIENT_ID,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-      callbackURL: "http://localhost:8888/auth/spotify/callback",
+      callbackURL: "http://localhost:5000/users/spotifyRedirect",
     },
-    async (accessToken, refreshToken, expires_in, profile, done, next) => {
+    async function (accessToken, refreshToken, expires_in, profile, next) {
+      console.log(profile);
+      const newUser = {
+        spotifyId: profile.id,
+        name: profile.displayName,
+        surname: "",
+        email: profile.email,
+        role: "User",
+        refreshTokens: [],
+      };
+      try {
+        const user = await UserModel.findOne({ spotifyId: profile.id });
+
+        if (user) {
+          const tokens = await authenticate(user);
+          next(null, { user, tokens });
+        } else {
+          const createdUser = new UserModel(newUser);
+          await createdUser.save();
+          const tokens = await authenticate(createdUser);
+          next(null, { user: createdUser, tokens });
+        }
+      } catch (error) {
+        next(error);
+      }
+    }
+    /*  async (accessToken, refreshToken, expires_in, profile, done, next) => {
       const newUser = {
         spotifyId: profile.id,
         name: profile.name.givenName,
@@ -37,6 +63,7 @@ passport.use(
         next(error);
       }
     }
+  ) */
   )
 );
 
