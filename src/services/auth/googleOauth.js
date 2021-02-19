@@ -1,19 +1,19 @@
 const passport = require("passport");
-const SpotifyStrategy = require("passport-spotify").Strategy;
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const UserModel = require("../users/schema");
-const { authenticate } = require("./");
+const { authenticate } = require(".");
 
 passport.use(
-  "spotify",
-  new SpotifyStrategy(
+  "google",
+  new GoogleStrategy(
     {
-      clientID: process.env.SPOTIFY_CLIENT_ID,
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-      callbackURL: "http://localhost:8888/auth/spotify/callback",
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "http://localhost:5000/users/googleRedirect",
     },
-    async (accessToken, refreshToken, expires_in, profile, done, next) => {
+    async (request, accessToken, refreshToken, profile, next) => {
       const newUser = {
-        spotifyId: profile.id,
+        googleId: profile.id,
         name: profile.name.givenName,
         surname: profile.name.familyName,
         email: profile.emails[0].value,
@@ -22,7 +22,7 @@ passport.use(
       };
 
       try {
-        const user = await UserModel.findOne({ spotifyId: profile.id });
+        const user = await UserModel.findOne({ googleId: profile.id });
 
         if (user) {
           const tokens = await authenticate(user);
