@@ -1,5 +1,10 @@
 const express = require("express");
 const passport = require("passport");
+<<<<<<< Updated upstream
+=======
+const jwt = require("jsonwebtoken");
+
+>>>>>>> Stashed changes
 const UserModel = require("./schema");
 const { authenticate, refresh } = require("../auth");
 const { authorize } = require("../auth/middlewares");
@@ -18,9 +23,16 @@ usersRouter.get("/", authorize, async (req, res, next) => {
 
 usersRouter.get("/me", async (req, res, next) => {
   try {
-    res.send(req.user);
-  } catch (error) {
-    next(error);
+    const accessToken = req.cookies.accessToken;
+    console.log("Cookies: ", req.cookies);
+    /*  const decoded = await jwt.verify(accessToken, process.env.JWT_SECRET);
+    console.log(decoded);
+    if (decoded) {
+      const user = await UserModel.findById(decoded._id);
+      res.send(user);
+    } */
+  } catch (err) {
+    next(err);
   }
 });
 
@@ -28,14 +40,13 @@ usersRouter.post("/register", async (req, res, next) => {
   try {
     const newUser = new UserModel(req.body);
     const { _id } = await newUser.save();
-
     res.status(201).send(_id);
   } catch (error) {
     next(error);
   }
 });
 
-usersRouter.put("/me", async (req, res, next) => {
+/* usersRouter.put("/me", async (req, res, next) => {
   try {
     const updates = Object.keys(req.body);
     updates.forEach((update) => (req.user[update] = req.body[update]));
@@ -44,7 +55,7 @@ usersRouter.put("/me", async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+}); */
 
 usersRouter.delete("/me", async (req, res, next) => {
   try {
@@ -61,19 +72,16 @@ usersRouter.post("/login", async (req, res, next) => {
 
     const user = await UserModel.findByCredentials(email, password);
     //Generate token
-    const { accessToken, refreshToken } = await authenticate(user);
+    const tokens = await authenticate(user);
 
     //Send back tokens
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      path: "/",
-    });
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie("accessToken", tokens.accessToken);
+    /*   res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       path: "/users/refreshToken",
-    });
+    }); */
 
-    res.send("Ok");
+    res.send(user);
   } catch (error) {
     console.log(error);
     next(error);
@@ -109,25 +117,21 @@ usersRouter.get(
   })
 );
 
-usersRouter.get(
-  "/spotifyRedirect",
-  passport.authenticate("spotify"),
-  async (req, res, next) => {
-    try {
-      res.cookie("accessToken", req.user.tokens.accessToken, {
-        httpOnly: true,
-      });
-      res.cookie("refreshToken", req.user.tokens.refreshToken, {
-        httpOnly: true,
-        path: "/users/refreshToken",
-      });
+usersRouter.get("/spotifyRedirect", passport.authenticate("spotify"), async (req, res, next) => {
+  try {
+    res.cookie("accessToken", req.user.tokens.accessToken, {
+      httpOnly: true,
+    });
+    res.cookie("refreshToken", req.user.tokens.refreshToken, {
+      httpOnly: true,
+      path: "/users/refreshToken",
+    });
 
-      res.status(200).redirect("http://localhost:3000/");
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).redirect("http://localhost:3000/");
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 usersRouter.get(
   "/googleLogin",
